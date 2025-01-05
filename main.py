@@ -53,8 +53,7 @@ daily_data["Kolor"] = [
 ]
 
 daily_data["image"] = [
-    f"https://github.com/dbednarekk/TBWheatherData/img/{x.split(' ')[-1]}.jpg"
-    for x in daily_data["Kolor"]
+    f"tbweather/static/img/{x.split(' ')[-1]}.jpg" for x in daily_data["Kolor"]
 ]
 st.data_editor(
     daily_data,
