@@ -4,6 +4,8 @@ import requests_cache
 import streamlit as st
 from retry_requests import retry
 
+from colors import determine_blanket_color
+
 # Setup the Open-Meteo API client with cache and retry on error
 cache_session = requests_cache.CachedSession(".cache", expire_after=3600)
 retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
@@ -32,7 +34,7 @@ response = responses[0]
 # Process daily data. The order of variables needs to be the same as requested.
 daily = response.Daily()
 
-daily_temperature_2m_max = daily.Variables(0).ValuesAsNumpy()
+daily_temperature_2m_max = daily.Variables(0).ValuesAsNumpy().round()
 
 
 daily_data = {
@@ -45,9 +47,20 @@ daily_data = {
 }
 
 # daily_data["Maksymalna temperatura"] = f"{daily_temperature_2m_max.round(1)} °C"
-daily_data["Maksymalna temperatura °C"] = daily_temperature_2m_max.round(1)
-daily_data["Kolor"] = "test"
+daily_data["Maksymalna temperatura °C"] = daily_temperature_2m_max
+daily_data["Kolor"] = [
+    determine_blanket_color(temperature) for temperature in daily_temperature_2m_max
+]
 
+daily_data["image"] = [
+    f"https://github.com/dbednarekk/TBWheatherData/img/{x.split(' ')[-1]}.jpg"
+    for x in daily_data["Kolor"]
+]
+st.data_editor(
+    daily_data,
+    column_config={"image": st.column_config.ImageColumn("Zdjęcie")},
+    hide_index=True,
+)
 
 daily_dataframe = pd.DataFrame(data=daily_data)
-st.write(daily_dataframe)
+# st.write(daily_dataframe)
