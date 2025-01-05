@@ -53,12 +53,13 @@ daily_data["Kolor"] = [
 ]
 
 daily_data["image"] = [
-    f"https://tbweather.streamlit.app/app/static/{x.split(' ')[-1]}.jpg"
-    for x in daily_data["Kolor"]
+    f"app/static/{x.split(' ')[-1]}.jpg" for x in daily_data["Kolor"]
 ]
 st.data_editor(
     daily_data,
-    column_config={"image": st.column_config.ImageColumn("Zdjęcie")},
+    column_config={
+        "image": st.column_config.ImageColumn(label="Zdjęcie", width="medium")
+    },
     hide_index=True,
 )
 
