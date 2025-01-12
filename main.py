@@ -15,15 +15,17 @@ openmeteo = openmeteo_requests.Client(session=retry_session)
 # The order of variables in hourly or daily is important to assign them correctly below
 
 current_date = pd.Timestamp.now().strftime("%Y-%m-%d")
-first_day_of_month = pd.Timestamp.now().replace(day=2).strftime("%Y-%m-%d")
+first_day_of_month = pd.Timestamp.now().replace(day=1).strftime("%Y-%m-%d")
+
 url = "https://api.open-meteo.com/v1/forecast"
 params = {
-    "latitude": 51.8197,
-    "longitude": 19.3038,
+    "latitude": 51.75,
+    "longitude": 19.45,
     "daily": ["temperature_2m_max", "temperature_2m_min"],
-    "timezone": "auto",
+    "timezone": "Europe/Berlin",
     "start_date": first_day_of_month,
     "end_date": current_date,
+    "models": "icon_seamless",
 }
 responses = openmeteo.weather_api(url, params=params)
 
@@ -35,19 +37,23 @@ response = responses[0]
 daily = response.Daily()
 
 daily_temperature_2m_max = daily.Variables(0).ValuesAsNumpy().round()
+daily_temperature_2m_min = daily.Variables(1).ValuesAsNumpy().round()
+time = pd.Timestamp(daily.Time(), unit="s") + pd.Timedelta(days=1)
 
 
 daily_data = {
     "data": pd.date_range(
-        start=pd.to_datetime(daily.Time(), unit="s", utc=True),
-        end=pd.to_datetime(daily.TimeEnd(), unit="s", utc=True),
+        start=pd.to_datetime(daily.Time(), unit="s", utc=True) + pd.Timedelta(days=1),
+        end=pd.to_datetime(daily.TimeEnd(), unit="s", utc=True) + pd.Timedelta(days=1),
         freq=pd.Timedelta(seconds=daily.Interval()),
         inclusive="left",
     ).strftime("%Y-%m-%d"),
 }
 
 # daily_data["Maksymalna temperatura"] = f"{daily_temperature_2m_max.round(1)} °C"
+daily_data["Minimalna temperatura °C"] = daily_temperature_2m_min
 daily_data["Maksymalna temperatura °C"] = daily_temperature_2m_max
+
 daily_data["Kolor"] = [
     determine_blanket_color(temperature) for temperature in daily_temperature_2m_max
 ]
@@ -57,9 +63,7 @@ daily_data["image"] = [
 ]
 st.data_editor(
     daily_data,
-    column_config={
-        "image": st.column_config.ImageColumn(label="Zdjęcie", width="medium")
-    },
+    column_config={"image": st.column_config.ImageColumn(label="Zdjęcie")},
     hide_index=True,
 )
 
